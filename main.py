@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 from helper_functions import setup_nltk_data
 from helper_functions import save_cached_data
 from helper_functions import load_cached_data
+from helper_functions import extract_statistical_features
+
 
 import sys
 import os
@@ -57,6 +59,18 @@ def main():
         context_windows = get_context_windows_padded(train_data, n_context_size)
         write_context_windows_to_file(context_windows, output_path=context_output_path)
 
+    # Test statistical features on first real example
+    if len(context_windows) > 0:
+        first_example = context_windows[0]
+        print("First context window:", first_example)
+
+        context = " ".join(first_example["words"])
+        target_word = first_example["target"]
+
+        features = extract_statistical_features(context, target_word)
+        print("Statistical features:", features)
+
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

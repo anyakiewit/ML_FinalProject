@@ -1,6 +1,7 @@
 import nltk
 import os
 import json
+import string
 
 def setup_nltk_data():
     nltk_data_dir = os.path.join(os.getcwd(), 'nltk_data')
@@ -30,3 +31,27 @@ def load_cached_data(input_path):
         for line in infile:
             records.append(json.loads(line))
     return records
+
+def average_word_length(context):
+    words = context.split()
+    if len(words) == 0:
+        return 0.0
+    return sum(len(word) for word in words) / len(words)
+
+def sentence_length(context):
+    words = context.split()
+    return len(words)
+
+def punctuation_count(context):
+    return sum(1 for char in context if char in string.punctuation)
+
+def all_caps_function(target_word):
+    return 1 if target_word.isupper() and any(c.isalpha() for c in target_word) else 0
+
+def extract_statistical_features(context, target_word):
+    return [
+        average_word_length(context),
+        sentence_length(context),
+        punctuation_count(context),
+        all_caps_function(target_word)
+    ]
