@@ -546,3 +546,5 @@ nltk_data/
 data/
 output/
 
+# Papers
+papers/
