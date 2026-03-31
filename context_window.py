@@ -30,7 +30,9 @@ def get_context_windows_padded(data, n_context):
                 'target': words[i],
                 'target_label': labels[i],
                 'words': padded_words[start:end],
-                'labels': padded_labels[start:end]
+                'labels': padded_labels[start:end],
+                'word_index': i,
+                'doc_length': length
             })
 
     return context_windows
