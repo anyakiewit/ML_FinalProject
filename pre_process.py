@@ -11,6 +11,8 @@ def load_data(input_path):
     """Load data from a JSONL file."""
 
     output_records = []
+    if not os.path.exists(input_path):
+        return output_records
 
     with open(input_path, 'r', encoding='utf-8') as infile:
         for line in infile:

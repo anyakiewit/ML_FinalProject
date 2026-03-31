@@ -21,13 +21,16 @@ import json
 ### PARAMETERS ###
 n_context_size = 10
 context_output_path = "output/context_windows.jsonl"
+dev_cache_path = "data/dev.jsonl"
+
+BATCH_SIZE = 64
+
+TEST_LIMIT = 50000
 
 def main():
     """Main entry point of the application."""
 
-    # ________________ Pre Processing ________________
-
-    dev_cache_path = "data/dev.jsonl"
+    print("________________ Pre Processing ________________")
 
     # Create validation split
     create_validation_split_path("raw_data/subtaskC_train.jsonl")
@@ -46,15 +49,9 @@ def main():
     # Download wordnet and omw-1.4; Choice for models is ungrounded
     setup_nltk_data()
 
-    # Lemmatize tokens
-    for record in train_data + val_data + dev_data:
-        record['words'] = lemmatize_tokens(record['words'])
+    lemmatizer = WordNetLemmatizer()
 
-    # Stem tokens
-    # for record in train_data + val_data + dev_data:
-    #     record['words'] = stem_tokens(record['words'])
-
-    # ________________ Context Windows ________________
+    print("________________ Context Windows ________________")
 
     # Create context windows
     if os.path.exists(context_output_path):
@@ -65,102 +62,127 @@ def main():
         context_windows = get_context_windows_padded(train_data, n_context_size)
         write_context_windows_to_file(context_windows, output_path=context_output_path)
 
-    # ________________ Statistical Features ________________
+    # print("________________ Statistical Features ________________")
 
-    # Test statistical features on first real example
-    if len(context_windows) > 0:
-        first_example = context_windows[0]
-        print("First context window:", first_example)
+    # # Test statistical features on first real example
+    # if len(context_windows) > 0:
+    #     first_example = context_windows[0]
+    #     print("First context window:", first_example)
 
-        context = " ".join(first_example["words"])
-        target_word = first_example["target"]
+    #     context = " ".join(first_example["words"])
+    #     target_word = first_example["target"]
 
-        features = extract_statistical_features(context, target_word)
-        print("Statistical features:", features)
+    #     features = extract_statistical_features(
+    #         context, 
+    #         target_word, 
+    #         first_example.get("word_index", 0), 
+    #         first_example.get("doc_length", 1))
+    #     print("Statistical features:", features)
 
-    # ________________ Perplexity Feature ________________
+    print("________________ Perplexity Feature ________________")
+    cache_path = "output/mlm_features_cache.jsonl"
 
-    mlm_extractor = None
-
-    cache_path = "output/mlm_features_cache.json"
-    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-
+    mlm_cache = {}
+    
     if os.path.exists(cache_path):
         print(f"Loading cached MLM features from {cache_path}...")
         with open(cache_path, 'r', encoding='utf-8') as f:
-            mlm_cache = json.load(f)
-    else:
-        mlm_cache = {}
+            for line in f:
+                record = json.loads(line)
+                mlm_cache[record["key"]] = [record["prob"], record["rank"], record.get("top_guess", "")]
 
-    human_probs, human_ranks = [], []
-    machine_probs, machine_ranks = [], []
+    missing_windows = False
+    for window in context_windows:
+        window_key = f"{window['id']}_[{window['target']}]_{'_'.join(window['words'])}"
+        if window_key not in mlm_cache:
+            missing_windows = True
+            break
 
-    windows_to_process = context_windows
+    if missing_windows:
+        mlm_extractor = MLMFeatureExtractor()
+        with open(cache_path, 'a', encoding='utf-8') as f:
+            for i in range(0, len(context_windows), BATCH_SIZE):
+                batch = context_windows[i:i + BATCH_SIZE]
+                batch_context_words, batch_target_words, batch_keys, uncached_indices = [], [], [], []
 
-    for i, window in enumerate(windows_to_process):
-        if i % 100 == 0 and i > 0:
-            print(f"Processed {i} windows")
+                for j, window in enumerate(batch):
+                    window_key = f"{window['id']}_[{window['target']}]_{'_'.join(window['words'])}"
+                    batch_keys.append(window_key)
+                    if window_key not in mlm_cache:
+                        batch_context_words.append(window['words'])
+                        batch_target_words.append(window['target'])
+                        uncached_indices.append(j)
 
-        target_word = window["target"]
-        context_words = window["words"]
-        label = window["target_label"]
+                if uncached_indices:
+                    batch_results = mlm_extractor.get_prediction_features_batch(batch_context_words, batch_target_words)
+                    for idx, result in zip(uncached_indices, batch_results):
+                        mlm_cache[batch_keys[idx]] = result
+                        f.write(json.dumps({"key": batch_keys[idx], "prob": result[0], "rank": result[1], "top_guess": result[2]}) + '\n')
+                
+                if i % 1000 == 0: print(f"Processed {i}/{len(context_windows)} windows.")
 
-        context_str = "_".join(context_words)
-        window_key = f"{window['id']}_[{target_word}]_{context_str}"
+    human_probs, human_ranks, machine_probs, machine_ranks = [], [], [], []
 
-        if window_key in mlm_cache:
-            prob, rank = mlm_cache[window_key]
-        else:
-            if mlm_extractor is None:
-                mlm_extractor = MLMFeatureExtractor()
+    final_dataset = []
 
-            prob, rank = mlm_extractor.get_prediction_features(context_words, target_word)
+    print("\n--- EXAMPLES OF MODEL PREDICTIONS ---")
+    for idx, window in enumerate(context_windows):
+        window_key = f"{window['id']}_[{window['target']}]_{'_'.join(window['words'])}"
+        prob, rank, top_guess = mlm_cache[window_key]
+        
+        lemma = lemmatizer.lemmatize(window['target'].lower().strip(string.punctuation))
 
-            mlm_cache[window_key] = [prob, rank]
+        clean_context = " ".join([w for w in window['words'] if w != '<PAD>'])
 
-            if len(mlm_cache) % 100 == 0:
-                with open(cache_path, 'w', encoding='utf-8') as f:
-                    json.dump(mlm_cache, f)
+        stat_features = extract_statistical_features(
+            context=clean_context,
+            target_word=window['target'],
+            word_index=window.get("word_index", 0),
+            doc_length=window.get("doc_length", 1)
+        )
 
-        if label == 0:
+        combined_features = {
+            "id": window["id"],
+            "target": window["target"],
+            "lemma": lemma,
+            "label": window["target_label"],
+            "mlm_prob": prob,
+            "mlm_rank": rank,
+            "stat_avg_word_len": stat_features[0],
+            "stat_sentence_len": stat_features[1],
+            "stat_punct_count": stat_features[2],
+            "stat_is_all_caps": stat_features[3],
+            "stat_relative_pos": stat_features[4]
+        }
+        
+        final_dataset.append(combined_features)
+
+        if window["target_label"] == 0:
             human_probs.append(prob)
             human_ranks.append(rank)
         else:
             machine_probs.append(prob)
             machine_ranks.append(rank)
 
-    with open(cache_path, 'w', encoding='utf-8') as f:
-        json.dump(mlm_cache, f)
-        print(f"Successfully saved {len(mlm_cache)} features to cache.")
+        if idx < 5:
+            print(f"Context: {clean_context}")
+            print(f"  Target: '{window['target']}' | Lemma: '{lemma}' | Rank: {rank} | Guess: '{top_guess}'")
+            print(f"  Stats: {stat_features}")
+            print("-" * 40)
 
     def print_stats(name, data):
-        if not data:
-            print(f"{name}: No data available")
-            return
         data_arr = np.array(data)
-        print(f"  {name:12} -> Mean: {data_arr.mean():.6f} | Median: {np.median(data_arr):.6f} | Min: {data_arr.min():.6f} | Max: {data_arr.max():.6f}")
+        print(f"  {name:12} -> Mean: {data_arr.mean():.6e} | Median: {np.median(data_arr):.6e}")
 
     print("\n" + "="*50)
-    print(" MLM PREDICTION FEATURES ANALYSIS")
+    print(" MLM PREDICTION FEATURES ANALYSIS ")
     print("="*50)
-
-    print("Mean: This score is the model's confidence (from 0.0 to 1.0) that the actual word is the correct answer")
-    print("")
-    print("Rank: A rank of 1 means it was the model's top guess. A rank of 40,000 means the model thought it was not a valid guess.")
-
-    print("")
-    print("[ HUMAN WRITTEN WORDS ]")
-    print(f"  Total samples: {len(human_probs)}")
+    print(f"[ HUMAN ] Samples: {len(human_probs)}")
     print_stats("Probability", human_probs)
     print_stats("Rank", human_ranks)
-
-    print("")
-    print("[ MACHINE GENERATED WORDS ]")
-    print(f"  Total samples: {len(machine_probs)}")
+    print(f"\n[ MACHINE ] Samples: {len(machine_probs)}")
     print_stats("Probability", machine_probs)
     print_stats("Rank", machine_ranks)
-    print("")
-
     print("="*50)
 
     return 0
