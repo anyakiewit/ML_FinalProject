@@ -48,10 +48,13 @@ def punctuation_count(context):
 def all_caps_function(target_word):
     return 1 if target_word.isupper() and any(c.isalpha() for c in target_word) else 0
 
-def extract_statistical_features(context, target_word):
+def extract_statistical_features(context, target_word, word_index, doc_length):
+    relative_position = word_index / doc_length if doc_length > 0 else 0.0
+
     return [
         average_word_length(context),
         sentence_length(context),
         punctuation_count(context),
-        all_caps_function(target_word)
+        all_caps_function(target_word),
+        relative_position
     ]
