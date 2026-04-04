@@ -2,6 +2,7 @@ import nltk
 import os
 import json
 import string
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def setup_nltk_data():
     nltk_data_dir = os.path.join(os.getcwd(), 'nltk_data')
@@ -57,3 +58,26 @@ def extract_statistical_features(context, target_word):
         punctuation_count(context),
         all_caps_function(target_word)
     ]
+
+def build_tfidf_vectorizer(context_windows):
+    """Fit a TF-IDF vectorizer on training context window texts (lowercased)."""
+    corpus = [
+        " ".join(w for w in cw["words"] if w != "<PAD>").lower()
+        for cw in context_windows
+    ]
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(corpus)
+    return vectorizer
+
+def extract_tfidf_score(vectorizer, context_words, target_word):
+    """Get the TF-IDF score of the target word within its context window."""
+    context_text = " ".join(w for w in context_words if w != "<PAD>").lower()
+    target_lower = target_word.lower()
+
+    tfidf_matrix = vectorizer.transform([context_text])
+    vocab = vectorizer.vocabulary_
+
+    if target_lower in vocab:
+        col = vocab[target_lower]
+        return float(tfidf_matrix[0, col])
+    return 0.0
