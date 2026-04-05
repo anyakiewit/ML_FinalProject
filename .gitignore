@@ -544,7 +544,8 @@ nltk_data/
 
 # Processed data / Raw data is also kept remote
 data/
-output/
+output/*.png
+output/*.joblib
 
 # Papers
 papers/

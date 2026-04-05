@@ -1,10 +1,11 @@
-from nltk import WordNetLemmatizer
-from nltk import SnowballStemmer
-from sklearn.model_selection import train_test_split
-from helper_functions import setup_nltk_data
-
 import json
 import os
+
+from nltk import SnowballStemmer, WordNetLemmatizer
+from sklearn.model_selection import train_test_split
+
+from helper_functions import setup_nltk_data
+
 
 # Marten
 def load_data(input_path):
@@ -12,7 +13,7 @@ def load_data(input_path):
 
     output_records = []
     if not os.path.exists(input_path):
-        return output_records
+        raise FileNotFoundError(f"Required data file not found: {input_path}")
 
     with open(input_path, 'r', encoding='utf-8') as infile:
         for line in infile:
@@ -79,6 +80,3 @@ def lemmatize_tokens(words):
     """Lemmatize tokens"""
     lemmatizer = WordNetLemmatizer()
     return [lemmatizer.lemmatize(word) for word in words]
-
-
-
