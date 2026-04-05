@@ -33,17 +33,19 @@ def load_cached_data(input_path):
     return records
 
 def average_word_length(context):
-    words = context.split()
+    words = [word for word in context.split() if word != "<PAD>"]
     if len(words) == 0:
         return 0.0
     return sum(len(word) for word in words) / len(words)
 
 def sentence_length(context):
-    words = context.split()
+    words = [word for word in context.split() if word != "<PAD>"]
     return len(words)
 
 def punctuation_count(context):
-    return sum(1 for char in context if char in string.punctuation)
+    words = [word for word in context.split() if word != "<PAD>"]
+    clean_context = " ".join(words)
+    return sum(1 for char in clean_context if char in string.punctuation)
 
 def all_caps_function(target_word):
     return 1 if target_word.isupper() and any(c.isalpha() for c in target_word) else 0

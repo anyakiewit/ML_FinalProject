@@ -6,17 +6,21 @@ from pre_process import create_validation_split_path
 from context_window import get_context_windows_padded
 from context_window import write_context_windows_to_file
 from context_window import load_context_windows_from_file
-from sklearn.model_selection import train_test_split
+# from sklearn.model_selection import train_test_split
 from helper_functions import setup_nltk_data
 from helper_functions import save_cached_data
 from helper_functions import load_cached_data
 from helper_functions import extract_statistical_features
 
 import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
 
 import sys
 import os
-import json
+# import json
 
 ### PARAMETERS ###
 n_context_size = 10
@@ -26,6 +30,36 @@ dev_cache_path = "data/dev.jsonl"
 BATCH_SIZE = 64
 
 TEST_LIMIT = 50000
+
+def build_statistical_feature_matrix(context_windows):
+    X = []
+    y = []
+
+    for example in context_windows:
+        context = " ".join(example["words"])
+        target_word = example["target"]
+        label = example["target_label"]
+
+        features = extract_statistical_features(context, target_word)
+        X.append(features)
+        y.append(label)
+
+    return X, y
+
+def train_logistic_regression(X_train, y_train):
+    model = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=1000))
+    ])
+    model.fit(X_train, y_train)
+    return model
+
+
+def evaluate_model(model, X, y, split_name="Validation"):
+    predictions = model.predict(X)
+    print(f"\n### {split_name} results ###")
+    print("Accuracy:", accuracy_score(y, predictions))
+    print(classification_report(y, predictions))
 
 def main():
     """Main entry point of the application."""
@@ -53,16 +87,23 @@ def main():
 
     print("________________ Context Windows ________________")
 
-    # Create context windows
+    # Create context windows for train
     if os.path.exists(context_output_path):
         print("Loading cached context windows...")
-        context_windows = load_context_windows_from_file(context_output_path)
+        train_context_windows = load_context_windows_from_file(context_output_path)
     else:
         print("Generating and saving context windows...")
-        context_windows = get_context_windows_padded(train_data, n_context_size)
-        write_context_windows_to_file(context_windows, output_path=context_output_path)
+        train_context_windows = get_context_windows_padded(train_data, n_context_size)
+        write_context_windows_to_file(train_context_windows, output_path=context_output_path)
 
     # print("________________ Statistical Features ________________")
+    # Create context windows for validation
+    val_context_windows = get_context_windows_padded(val_data, n_context_size)
+
+    # Optional: inspect first example
+    if len(train_context_windows) > 0:
+        first_example = train_context_windows[0]
+        print("First context window:", first_example)
 
     # # Test statistical features on first real example
     # if len(context_windows) > 0:
@@ -184,6 +225,17 @@ def main():
     print_stats("Probability", machine_probs)
     print_stats("Rank", machine_ranks)
     print("="*50)
+
+    # Build feature matrices
+    X_train, y_train = build_statistical_feature_matrix(train_context_windows)
+    X_val, y_val = build_statistical_feature_matrix(val_context_windows)
+
+    # Train Logistic Regression
+    model = train_logistic_regression(X_train, y_train)
+
+    # Evaluate
+    evaluate_model(model, X_train, y_train, split_name="Train")
+    evaluate_model(model, X_val, y_val, split_name="Validation")
 
     return 0
 
