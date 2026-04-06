@@ -58,13 +58,34 @@ def punctuation_count(context):
 def all_caps_function(target_word):
     return 1 if target_word.isupper() and any(c.isalpha() for c in target_word) else 0
 
+def is_first_capitalized(target_word):
+    "detects if the first character of the target word is capitalized"
+    if not target_word:
+        return 0
+    if target_word[0].isupper():
+        return 1
+    else:
+        return 0
+
+def doc_position(word_index):
+    "returns the absolute position of the word"
+    return word_index
+
+def normalized_doc_position(word_index, doc_length):
+    "returns the relative position of the word (0.0 to 1.0)"
+    if doc_length <= 0:
+        return 0.0
+    return word_index/doc_length
 
 def extract_statistical_features(context, target_word, word_index, doc_length):
-    relative_position = word_index / doc_length if doc_length > 0 else 0.0
+    # relative_position = word_index / doc_length if doc_length > 0 else 0.0
 
     return [
         average_word_length(context),
         punctuation_count(context),
         all_caps_function(target_word),
-        relative_position
+        # relative_position,
+        is_first_capitalized(target_word),
+        doc_position(word_index),
+        normalized_doc_position(word_index, doc_length)
     ]

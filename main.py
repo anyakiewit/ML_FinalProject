@@ -155,7 +155,7 @@ def main():
 
     stat_feature_names = [
         "word_length", "is_capitalized", "is_numeric", 
-        "has_punctuation", "doc_length", "punctuation_count"
+        "has_punctuation", "doc_length", "punctuation_count", "doc_pos", "norm_doc_pos"
     ]
     comb_feature_names = ["mlm_probability", "mlm_rank"] + stat_feature_names
 
