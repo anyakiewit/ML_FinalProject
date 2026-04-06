@@ -1,6 +1,7 @@
 import gzip
 import json
 import os
+import numpy as np
 
 import joblib
 from rich import print
@@ -9,6 +10,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, LinearSVC
+from sklearn.naive_bayes import GaussianNB
 
 from helper_functions import extract_statistical_features
 
@@ -165,4 +167,31 @@ def train_sdg_svm(
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     print(f"[dim]SVM model saved to {model_path}[/dim]")
+    return model
+
+
+# ---------------------- Naive Bayes ----------------------
+
+
+def train_naive_bayes_baseline(
+        X_train,
+        y_train,
+        model_path="output/nb_baseline_model.joblib"):
+    """Trains a Naive Bayes baseline using ONLY the normalized document position."""
+
+    if os.path.exists(model_path):
+        print(f"[dim]Loading cached NB Baseline from {model_path}[/dim]")
+        return joblib.load(model_path)
+
+    print("[dim]Training new Naive Bayes Positional Baseline[/dim]")
+
+
+    X_train_pos = np.array(X_train)[:, -1].reshape(-1, 1)
+
+    model = GaussianNB()
+    model.fit(X_train_pos, y_train)
+
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    joblib.dump(model, model_path)
+    print(f"[dim]NB Baseline model saved to {model_path}[/dim]")
     return model

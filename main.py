@@ -19,7 +19,7 @@ from mlm_features import (MLMFeatureExtractor, analyze_mlm_predictions,
 from models import (build_combined_feature_matrix,
                     build_statistical_feature_matrix, evaluate_model,
                     train_linear_svm, train_logistic_regression, train_sdg_svm,
-                    train_svm)
+                    train_svm, train_naive_bayes_baseline)
 from pre_process import create_validation_split_path, load_data
 from visualize import plot_feature_importances
 
@@ -95,7 +95,6 @@ def main():
     print("\n[magenta]________________ Validation ________________[/magenta]")
     analyze_mlm_predictions(val_context_windows, val_mlm_cache, lemmatizer, show_examples=False)
 
-    print("\n[bold magenta]________________ Logistic Regression ________________[/bold magenta]")
 
     # Build feature matrices
     X_train, y_train = build_statistical_feature_matrix(train_context_windows)
@@ -103,6 +102,14 @@ def main():
 
     X_train_comb, y_train_comb = build_combined_feature_matrix(train_context_windows, cache_path=TRAIN_CACHE_PATH)
     X_val_comb, y_val_comb = build_combined_feature_matrix(val_context_windows, cache_path=VAL_CACHE_PATH)
+
+    print("\n[magenta]________________ NB Baseline (Position Only) ________________[/magenta]")
+    nb_model = train_naive_bayes_baseline(X_train, y_train)
+
+    X_val_pos = np.array(X_val)[:, -1].reshape(-1, 1)
+    evaluate_model(nb_model, X_val_pos, y_val, split_name="Validation Baseline")
+
+    print("\n[bold magenta]________________ Logistic Regression ________________[/bold magenta]")
 
     # Train Logistic Regression
     model = train_logistic_regression(X_train, y_train)
