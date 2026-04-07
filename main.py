@@ -1,4 +1,3 @@
-
 import gzip
 import json
 import os
@@ -9,19 +8,13 @@ import numpy as np
 from nltk import WordNetLemmatizer
 from rich import print
 
-from context_window import (get_context_windows_padded,
-                            load_context_windows_from_file,
-                            write_context_windows_to_file)
-from helper_functions import (extract_statistical_features, load_cached_data,
-                              save_cached_data, setup_nltk_data)
-from mlm_features import (MLMFeatureExtractor, analyze_mlm_predictions,
-                          get_or_create_mlm_features)
-from models import (build_combined_feature_matrix,
-                    build_statistical_feature_matrix, evaluate_model,
-                    train_linear_svm, train_logistic_regression, train_sdg_svm,
-                    train_svm, train_naive_bayes_baseline, train_naive_bayes)
+from context_window import (get_context_windows_padded,load_context_windows_from_file,write_context_windows_to_file)
+from helper_functions import (load_cached_data,save_cached_data, setup_nltk_data,)
+from mlm_features import (analyze_mlm_predictions, get_or_create_mlm_features)
+from models import (evaluate_model,train_linear_svm, train_logistic_regression, train_sdg_svm, train_naive_bayes_baseline, train_naive_bayes)
 from pre_process import create_validation_split_path, load_data
 from visualize import plot_feature_importances
+from stat_features import build_combined_feature_matrix, build_statistical_feature_matrix, build_positional_feature_matrix
 
 # PARAMETERS
 N_CONTEXT_SIZE = 10
@@ -104,10 +97,12 @@ def main():
     X_val_comb, y_val_comb = build_combined_feature_matrix(val_context_windows, cache_path=VAL_CACHE_PATH)
 
     print("\n[magenta]________________ NB Baseline (Position Only) ________________[/magenta]")
-    nb_model = train_naive_bayes_baseline(X_train, y_train)
+    X_train_pos, y_train_pos = build_positional_feature_matrix(train_context_windows)
+    X_val_pos, y_val_pos = build_positional_feature_matrix(val_context_windows)
 
-    X_val_pos = np.array(X_val)[:, -1].reshape(-1, 1)
-    evaluate_model(nb_model, X_val_pos, y_val, split_name="Validation Baseline")
+    nb_model = train_naive_bayes_baseline(X_train_pos, y_train_pos)
+
+    evaluate_model(nb_model, X_val_pos, y_val_pos, split_name="Validation Baseline")
 
     print("\n[bold magenta]________________ Full Naive Bayes ________________[/bold magenta]")
 
@@ -116,10 +111,10 @@ def main():
     nb_full_comb = train_naive_bayes(X_train_comb, y_train_comb, model_path="output/nb_full_model_comb.joblib")
 
     # Evaluate
-    evaluate_model(nb_full, X_train, y_train, split_name="Train")
-    evaluate_model(nb_full, X_val, y_val, split_name="Validation")
-    evaluate_model(nb_full_comb, X_train_comb, y_train_comb, split_name="Train Combined")
-    evaluate_model(nb_full_comb, X_val_comb, y_val_comb, split_name="Validation Combined")
+    evaluate_model(nb_full, X_train, y_train, context_windows=train_context_windows, split_name="Train")
+    evaluate_model(nb_full, X_val, y_val, context_windows=val_context_windows, split_name="Validation")
+    evaluate_model(nb_full_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
+    evaluate_model(nb_full_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
 
     print("\n[bold magenta]________________ Logistic Regression ________________[/bold magenta]")
 
@@ -128,10 +123,10 @@ def main():
     model_comb = train_logistic_regression(X_train_comb, y_train_comb)
 
     # Evaluate
-    evaluate_model(model, X_train, y_train, split_name="Train")
-    evaluate_model(model, X_val, y_val, split_name="Validation")
-    evaluate_model(model_comb, X_train_comb, y_train_comb, split_name="Train Combined")
-    evaluate_model(model_comb, X_val_comb, y_val_comb, split_name="Validation Combined")
+    evaluate_model(model, X_train, y_train, context_windows=train_context_windows, split_name="Train")
+    evaluate_model(model, X_val, y_val, context_windows=val_context_windows, split_name="Validation")
+    evaluate_model(model_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
+    evaluate_model(model_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
 
     print("\n[bold magenta]________________ SVM ________________[/bold magenta]")
 
@@ -144,39 +139,45 @@ def main():
 
     ### Trial of SVM variants ###
 
-    # Train SVM on Statistical Features
-    svm_linear_model = train_linear_svm(X_train, y_train)
+    # Train SVM on Statistical Features; Linear has hyperparameter tuning
+    svm_linear_model = train_linear_svm(X_train, y_train, tune=True)
     svm_sgd_model = train_sdg_svm(X_train, y_train)
 
     # Train SVM on Combined Features
-    svm_linear_model_comb = train_linear_svm(X_train_comb, y_train_comb, model_path="output/svm_linear_model_comb.joblib")
+    svm_linear_model_comb = train_linear_svm(X_train_comb, y_train_comb, model_path="output/svm_linear_model_comb.joblib", tune=True)
     svm_sgd_model_comb = train_sdg_svm(X_train_comb, y_train_comb, model_path="output/svm_sgd_model_comb.joblib")
 
     # Evaluate
     print("\n[magenta]________________ SVM Linear ________________[/magenta]")
-    evaluate_model(svm_linear_model, X_train, y_train, split_name="Train")
-    evaluate_model(svm_linear_model, X_val, y_val, split_name="Validation")
+    evaluate_model(svm_linear_model, X_train, y_train, context_windows=train_context_windows, split_name="Train")
+    evaluate_model(svm_linear_model, X_val, y_val, context_windows=val_context_windows, split_name="Validation")
 
     print("\n[magenta]________________ SVM SGD ________________[/ magenta]")
-    evaluate_model(svm_sgd_model, X_train, y_train, split_name="Train")
-    evaluate_model(svm_sgd_model, X_val, y_val, split_name="Validation")
+    evaluate_model(svm_sgd_model, X_train, y_train, context_windows=train_context_windows, split_name="Train")
+    evaluate_model(svm_sgd_model, X_val, y_val, context_windows=val_context_windows, split_name="Validation")
 
     print("\n[magenta]________________ SVM Linear Combined ________________[/magenta]")
-    evaluate_model(svm_linear_model_comb, X_train_comb, y_train_comb, split_name="Train Combined")
-    evaluate_model(svm_linear_model_comb, X_val_comb, y_val_comb, split_name="Validation Combined")
+    evaluate_model(svm_linear_model_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
+    evaluate_model(svm_linear_model_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
 
     print("\n[magenta]________________ SVM SGD Combined ________________[/magenta]")
-    evaluate_model(svm_sgd_model_comb, X_train_comb, y_train_comb, split_name="Train Combined")
-    evaluate_model(svm_sgd_model_comb, X_val_comb, y_val_comb, split_name="Validation Combined")
+    evaluate_model(svm_sgd_model_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
+    evaluate_model(svm_sgd_model_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
 
 
     print("\n[bold magenta]________________ Feature Importances ________________[/bold magenta]")
 
     stat_feature_names = [
-        "word_length", "is_capitalized", "is_numeric", 
-        "has_punctuation", "doc_length", "punctuation_count", "doc_pos", "norm_doc_pos"
+        "average_word_length", 
+        "punctuation_count", 
+        "is_all_caps", 
+        "is_first_capitalized"
     ]
-    comb_feature_names = ["mlm_probability", "mlm_rank"] + stat_feature_names
+    comb_feature_names = [
+        "mlm_log_prob", 
+        "mlm_log_rank", 
+        "mlm_perplexity"
+    ] + stat_feature_names
 
     plot_feature_importances(model, feature_names=stat_feature_names, title="Logistic Regression feature importance")
     plot_feature_importances(model_comb, feature_names=comb_feature_names, title="Logistic Regression Combined feature importance")
@@ -186,6 +187,10 @@ def main():
 
     plot_feature_importances(svm_linear_model_comb, feature_names=comb_feature_names, title="Linear SVM Combined feature importance")
     plot_feature_importances(svm_sgd_model_comb, feature_names=comb_feature_names, title="SGD SVM Combined feature importance")
+    
+    plot_feature_importances(nb_model, feature_names=["doc_pos", "norm_doc_pos"], title="Baseline Naive Bayes feature importance")
+    plot_feature_importances(nb_full, feature_names=stat_feature_names, title="Full Naive Bayes feature importance")
+    plot_feature_importances(nb_full_comb, feature_names=comb_feature_names, title="Full Naive Bayes Combined feature importance")
     
     return 0
 
