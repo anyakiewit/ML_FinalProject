@@ -21,7 +21,8 @@ def plot_feature_importances(model, feature_names, title="SVM_Feature_Importance
     colors = ['red' if val < 0 else 'green' for val in importances[indices]]
     
     plt.barh(range(len(indices)), importances[indices], color=colors, align='center')
-    plt.yticks(range(len(indices)), [feature_names[i] for i in indices])
+    safe_feature_names = [feature_names[i] if i < len(feature_names) else f"Feature {i}" for i in indices]
+    plt.yticks(range(len(indices)), safe_feature_names)
     plt.xlabel('Coefficient / Effect Value (Importance)')
     plt.tight_layout()
     
