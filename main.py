@@ -19,7 +19,7 @@ from mlm_features import (MLMFeatureExtractor, analyze_mlm_predictions,
 from models import (build_combined_feature_matrix,
                     build_statistical_feature_matrix, evaluate_model,
                     train_linear_svm, train_logistic_regression, train_sdg_svm,
-                    train_svm, train_naive_bayes_baseline)
+                    train_svm, train_naive_bayes_baseline, train_naive_bayes)
 from pre_process import create_validation_split_path, load_data
 from visualize import plot_feature_importances
 
@@ -108,6 +108,18 @@ def main():
 
     X_val_pos = np.array(X_val)[:, -1].reshape(-1, 1)
     evaluate_model(nb_model, X_val_pos, y_val, split_name="Validation Baseline")
+
+    print("\n[bold magenta]________________ Full Naive Bayes ________________[/bold magenta]")
+
+    # Train Full Naive Bayes
+    nb_full = train_naive_bayes(X_train, y_train)
+    nb_full_comb = train_naive_bayes(X_train_comb, y_train_comb, model_path="output/nb_full_model_comb.joblib")
+
+    # Evaluate
+    evaluate_model(nb_full, X_train, y_train, split_name="Train")
+    evaluate_model(nb_full, X_val, y_val, split_name="Validation")
+    evaluate_model(nb_full_comb, X_train_comb, y_train_comb, split_name="Train Combined")
+    evaluate_model(nb_full_comb, X_val_comb, y_val_comb, split_name="Validation Combined")
 
     print("\n[bold magenta]________________ Logistic Regression ________________[/bold magenta]")
 

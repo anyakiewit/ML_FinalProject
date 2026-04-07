@@ -170,7 +170,7 @@ def train_sdg_svm(
     return model
 
 
-# ---------------------- Naive Bayes ----------------------
+# ---------------------- Naive Bayes Baseline ----------------------
 
 
 def train_naive_bayes_baseline(
@@ -194,4 +194,29 @@ def train_naive_bayes_baseline(
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     print(f"[dim]NB Baseline model saved to {model_path}[/dim]")
+    return model
+
+# ---------------------- Naive Bayes ----------------------
+
+def train_naive_bayes(
+        X_train,
+        y_train,
+        model_path="output/nb_full_model.joblib"):
+    """Trains a Naive Bayes model using ALL provided features"""
+
+    if os.path.exists(model_path):
+        print(f"[dim]Loading cached full NB model from {model_path}[/dim]")
+        return joblib.load(model_path)
+
+    print("[dim]Training new full Naive Bayes model[/dim]")
+
+    model = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", GaussianNB())
+    ])
+    model.fit(X_train, y_train)
+
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    joblib.dump(model, model_path)
+    print(f"[dim]full NB model saved to {model_path}[/dim]")
     return model
