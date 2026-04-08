@@ -1,8 +1,10 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
 import math
 import gzip
 import json
 import string
-
+import joblib
+import os
 
 def average_word_length(words):
     if len(words) == 0:
@@ -48,11 +50,47 @@ def extract_statistical_features(context, target_word):
         is_first_capitalized(target_word)
     ]
 
+# ---------------------- TF-IDF ----------------------
+
+def build_tfidf_vectorizer(context_windows, cache_path="output/tfidf_vectorizer.joblib"):
+    """Fit a TF-IDF vectorizer on training context window texts (lowercased) or load cached one."""
+    if os.path.exists(cache_path):
+        from rich import print
+        print(f"[dim]Loading cached TF-IDF vectorizer from {cache_path}[/dim]")
+        return joblib.load(cache_path)
+
+    corpus = [
+        " ".join(w for w in cw["words"] if w != "<PAD>").lower()
+        for cw in context_windows
+    ]
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(corpus)
+    
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    joblib.dump(vectorizer, cache_path)
+    
+    from rich import print
+    print(f"[dim]Saved TF-IDF vectorizer to {cache_path}[/dim]")
+    return vectorizer
+
+def extract_tfidf_score(vectorizer, context_words, target_word):
+    """Get the TF-IDF score of the target word within its context window."""
+    context_text = " ".join(w for w in context_words if w != "<PAD>").lower()
+    target_lower = target_word.lower()
+
+    tfidf_matrix = vectorizer.transform([context_text])
+    vocab = vectorizer.vocabulary_
+
+    if target_lower in vocab:
+        col = vocab[target_lower]
+        return float(tfidf_matrix[0, col])
+    return 0.0
+
 
 # ---------------------- Helper Functions for Models ----------------------
 
 
-def build_statistical_feature_matrix(context_windows):
+def build_statistical_feature_matrix(context_windows, vectorizer=None):
     X = []
     y = []
 
@@ -65,6 +103,11 @@ def build_statistical_feature_matrix(context_windows):
             clean_words,
             target_word
         )
+        
+        if vectorizer is not None:
+            tfidf_score = extract_tfidf_score(vectorizer, example["words"], target_word)
+            features.append(tfidf_score)
+
         X.append(features)
         y.append(label)
 
@@ -73,7 +116,8 @@ def build_statistical_feature_matrix(context_windows):
 
 def build_combined_feature_matrix(
         context_windows,
-        cache_path="output/train_mlm_features_cache.jsonl.gz"
+        cache_path="output/train_mlm_features_cache.jsonl.gz",
+        vectorizer=None
     ):
 
     mlm_cache = {}
@@ -100,6 +144,10 @@ def build_combined_feature_matrix(
             clean_words,
             target_word
         )
+        
+        if vectorizer is not None:
+            tfidf_score = extract_tfidf_score(vectorizer, example["words"], target_word)
+            stat_features.append(tfidf_score)
 
         window_key = f"{example['id']}_[{example['target']}]_{'_'.join(example['words'])}"
 

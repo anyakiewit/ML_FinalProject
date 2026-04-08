@@ -18,7 +18,7 @@ def plot_feature_importances(model, feature_names, title="SVM_Feature_Importance
     plt.figure(figsize=(10, 6))
     plt.title(title)
     
-    colors = ['red' if val < 0 else 'green' for val in importances[indices]]
+    colors = ['salmon' if val < 0 else 'mediumseagreen' for val in importances[indices]]
     
     plt.barh(range(len(indices)), importances[indices], color=colors, align='center')
     safe_feature_names = [feature_names[i] if i < len(feature_names) else f"Feature {i}" for i in indices]
@@ -26,7 +26,7 @@ def plot_feature_importances(model, feature_names, title="SVM_Feature_Importance
     plt.xlabel('Coefficient / Effect Value (Importance)')
     plt.tight_layout()
     
-    filename = f"output/{title.lower().replace(' ', '_')}_importance.png"
+    filename = f"graphs/{title.lower().replace(' ', '_')}_importance.png"
     plt.savefig(filename)
     
     print(f"[dim]Saved feature importances to {filename}[/dim]")
