@@ -194,6 +194,8 @@ def main():
     plot_feature_importances(nb_full, feature_names=stat_feature_names, title="Full Naive Bayes feature importance")
     plot_feature_importances(nb_full_comb, feature_names=comb_feature_names, title="Full Naive Bayes Combined feature importance")
 
+    print("\n[bold magenta]________________ Final Evaluation ________________[/bold magenta]")
+
     return 0
 
 
