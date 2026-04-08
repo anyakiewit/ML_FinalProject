@@ -14,6 +14,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
+
 
 
 # ---------------------- Logistic Regression ----------------------
@@ -198,4 +200,42 @@ def train_naive_bayes(
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     print(f"[dim]full NB model saved to {model_path}[/dim]")
+    return model
+
+# ---------------------- Random Forest ----------------------
+
+def train_random_forest(
+        X_train,
+        y_train,
+        model_path="output/rf_model.joblib",
+        tune=True
+    ):
+
+    if os.path.exists(model_path):
+        print(f"[dim]Loading cached Random Forest model from {model_path}[/dim]")
+        return joblib.load(model_path)
+
+    print("[dim]Training new Random Forest model[/dim]")
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", RandomForestClassifier(class_weight='balanced', n_jobs=-1, random_state=42))
+    ])
+
+    if tune:
+        print("[dim]Running RandomizedSearchCV for Hyperparameters[/dim]")
+        param_dist = {
+            'clf__n_estimators': [100, 200, 300],
+            'clf__max_depth': [None, 10, 20, 30],
+            'clf__min_samples_split': [2, 5, 10]
+        }
+        search = RandomizedSearchCV(pipeline, param_dist, n_iter=5, cv=3, scoring='f1_macro', n_jobs=-1, random_state=42)
+        search.fit(X_train, y_train)
+        print(f"[bold green]Best RF Params:[/bold green] {search.best_params_}")
+        model = search.best_estimator_
+    else:
+        model = pipeline.fit(X_train, y_train)
+
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    joblib.dump(model, model_path)
+    print(f"[dim]Random Forest model saved to {model_path}[/dim]")
     return model

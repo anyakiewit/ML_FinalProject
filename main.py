@@ -11,7 +11,7 @@ from rich import print
 from context_window import (get_context_windows_padded,load_context_windows_from_file,write_context_windows_to_file)
 from helper_functions import (load_cached_data,save_cached_data, setup_nltk_data,)
 from mlm_features import (analyze_mlm_predictions, get_or_create_mlm_features)
-from models import (evaluate_model,train_linear_svm, train_logistic_regression, train_sdg_svm, train_naive_bayes_baseline, train_naive_bayes)
+from models import (evaluate_model,train_linear_svm, train_logistic_regression, train_sdg_svm, train_naive_bayes_baseline, train_naive_bayes, train_random_forest) 
 from pre_process import create_validation_split_path, load_data
 from visualize import plot_feature_importances
 from stat_features import build_combined_feature_matrix, build_statistical_feature_matrix, build_positional_feature_matrix, build_tfidf_vectorizer
@@ -165,6 +165,16 @@ def main():
     evaluate_model(svm_sgd_model_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
     evaluate_model(svm_sgd_model_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
 
+    print("\n[bold magenta]________________ Random Forest ________________[/bold magenta]")
+
+    rf_model = train_random_forest(X_train, y_train, tune=True)
+    rf_model_comb = train_random_forest(X_train_comb, y_train_comb, model_path="output/rf_model_comb.joblib", tune=True)
+
+    evaluate_model(rf_model, X_train, y_train, context_windows=train_context_windows, split_name="Train")
+    evaluate_model(rf_model, X_val, y_val, context_windows=val_context_windows, split_name="Validation")
+    evaluate_model(rf_model_comb, X_train_comb, y_train_comb, context_windows=train_context_windows, split_name="Train Combined")
+    evaluate_model(rf_model_comb, X_val_comb, y_val_comb, context_windows=val_context_windows, split_name="Validation Combined")
+
 
     print("\n[bold magenta]________________ Feature Importances ________________[/bold magenta]")
 
@@ -193,6 +203,9 @@ def main():
     plot_feature_importances(nb_model, feature_names=["doc_pos", "norm_doc_pos"], title="Baseline Naive Bayes feature importance")
     plot_feature_importances(nb_full, feature_names=stat_feature_names, title="Full Naive Bayes feature importance")
     plot_feature_importances(nb_full_comb, feature_names=comb_feature_names, title="Full Naive Bayes Combined feature importance")
+
+    plot_feature_importances(rf_model, feature_names=stat_feature_names, title="Random Forest feature importance")
+    plot_feature_importances(rf_model_comb, feature_names=comb_feature_names, title="Random Forest Combined feature importance")
 
     print("\n[bold magenta]________________ Final Evaluation ________________[/bold magenta]")
 
