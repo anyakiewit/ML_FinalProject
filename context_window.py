@@ -1,5 +1,7 @@
+import gzip
 import json
 import os
+
 
 def get_context_windows_padded(data, n_context):
     """Create context windows from record having n_context to either side"""
@@ -30,7 +32,9 @@ def get_context_windows_padded(data, n_context):
                 'target': words[i],
                 'target_label': labels[i],
                 'words': padded_words[start:end],
-                'labels': padded_labels[start:end]
+                'labels': padded_labels[start:end],
+                'word_index': i,
+                'doc_length': length
             })
 
     return context_windows
@@ -39,15 +43,18 @@ def get_context_windows_padded(data, n_context):
 def write_context_windows_to_file(windows, output_path):
     """Write context windows to file"""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as outfile:
+    open_func = gzip.open if output_path.endswith('.gz') else open
+    with open_func(output_path, 'wt', encoding='utf-8') as outfile:
         for window in windows:
             json.dump(window, outfile)
             outfile.write('\n')
 
+
 def load_context_windows_from_file(input_path):
     """Load context windows from an existing file"""
     context_windows = []
-    with open(input_path, 'r', encoding='utf-8') as infile:
+    open_func = gzip.open if input_path.endswith('.gz') else open
+    with open_func(input_path, 'rt', encoding='utf-8') as infile:
         for line in infile:
             context_windows.append(json.loads(line))
     return context_windows
