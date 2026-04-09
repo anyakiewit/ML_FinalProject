@@ -16,6 +16,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 
+from visualize import plot_and_save_confusion_matrix
 
 
 # ---------------------- Logistic Regression ----------------------
@@ -67,6 +68,9 @@ def evaluate_model(model, X, y, context_windows=None, split_name="Validation"):
     print(f"[bold green]Accuracy:[/bold green] {accuracy_score(y, predictions):.4f}")
     print(f"[bold green]Macro F1:[/bold green] {macro_f1:.4f}")
     print(f"[dim]{classification_report(y, predictions, target_names=['Human', 'Machine'])}[/dim]")
+
+    # Visualize and save the Confusion Matrix
+    plot_and_save_confusion_matrix(y, predictions, title=split_name)
 
     if context_windows is not None:
         calculate_boundary_mae(predictions, context_windows)

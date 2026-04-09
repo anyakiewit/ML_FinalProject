@@ -83,10 +83,10 @@ def main():
         print(f"\n[dim]First train MLM cache entry:\n  Key: {first_key}\n  Value: {first_val}[/dim]")
 
     print("\n[magenta]________________ Train ________________[/magenta]")
-    analyze_mlm_predictions(train_context_windows, train_mlm_cache, lemmatizer, show_examples=False)
+    analyze_mlm_predictions(train_context_windows, train_mlm_cache, lemmatizer, show_examples=False, split_name="Train")
 
     print("\n[magenta]________________ Validation ________________[/magenta]")
-    analyze_mlm_predictions(val_context_windows, val_mlm_cache, lemmatizer, show_examples=False)
+    analyze_mlm_predictions(val_context_windows, val_mlm_cache, lemmatizer, show_examples=False, split_name="Validation")
 
 
     print("\n[magenta]________________ Feature Matrices Preparation ________________[/magenta]")

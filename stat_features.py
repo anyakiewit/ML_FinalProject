@@ -4,6 +4,7 @@ import gzip
 import json
 import string
 import joblib
+from rich import print
 import os
 
 def average_word_length(words):
@@ -85,7 +86,6 @@ def extract_tfidf_score(vectorizer, context_words, target_word):
         col = vocab[target_lower]
         return float(tfidf_matrix[0, col])
     return 0.0
-
 
 # ---------------------- Helper Functions for Models ----------------------
 

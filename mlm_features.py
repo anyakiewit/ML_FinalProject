@@ -187,7 +187,8 @@ def analyze_mlm_predictions(
         context_windows,
         mlm_cache,
         lemmatizer,
-        show_examples=True
+        show_examples=True,
+        split_name="Dataset"
     ):
 
     human_probs, human_ranks, machine_probs, machine_ranks = [], [], [], []
@@ -233,3 +234,9 @@ def analyze_mlm_predictions(
     print_stats("Probability", machine_probs)
     print_stats("Rank", machine_ranks)
     print("[bold magenta]" + "=" * 50 + "[/bold magenta]")
+    
+    try:
+        from visualize import plot_mlm_analysis
+        plot_mlm_analysis(human_probs, human_ranks, machine_probs, machine_ranks, split_name=split_name)
+    except Exception as e:
+        print(f"[dim]Could not plot MLM analysis: {e}[/dim]")
