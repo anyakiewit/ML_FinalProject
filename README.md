@@ -5,3 +5,15 @@ A machine learning pipeline for detecting the boundary between human-written and
 This project was built for the MLP-2026 final project at the University of Groningen.
 
 Requiered libraries can be found in the requirements.txt file.
+
+Anya Kiewit
+S5168767
+
+Isabelle Voskamp
+S5319242
+
+Johan Wols
+S5199387
+
+Marten de Jong
+S4557182
