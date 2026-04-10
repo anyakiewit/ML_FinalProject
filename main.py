@@ -180,7 +180,7 @@ def main():
     # svm_linear_model_comb = train_linear_svm(X_train_comb, y_train_comb, model_path="output/svm_linear_model_comb.joblib", tune=True)
     svm_sgd_model_comb = train_sdg_svm(X_train_comb, y_train_comb, model_path="output/svm_sgd_model_comb.joblib")
 
-    Evaluate
+    # Evaluate
     print("\n[magenta]________________ SVM Linear ________________[/magenta]")
     evaluate_model(svm_linear_model, X_train, y_train, context_windows=train_context_windows, split_name="Train")
     evaluate_model(svm_linear_model, X_val, y_val, context_windows=val_context_windows, split_name="Validation")

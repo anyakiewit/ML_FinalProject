@@ -272,7 +272,7 @@ def evaluate_results(all_results):
 
     for res in all_results:
         mae_val = res.get('mae')
-        mae_str = f"{mae_val:.2f}" if mae_val is not Nona else "N/A"
+        mae_str = f"{mae_val:.2f}" if mae_val is not None else "N/A"
 
         table.add_row(
             res['name'],
