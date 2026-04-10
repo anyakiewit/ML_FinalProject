@@ -94,7 +94,12 @@ def build_statistical_feature_matrix(context_windows, vectorizer=None):
     X = []
     y = []
 
-    for example in context_windows:
+    if vectorizer is not None:
+        corpus = [" ".join(w for w in example["words"] if w != "<PAD>").lower() for example in context_windows]
+        tfidf_matrix = vectorizer.transform(corpus)
+        vocab = vectorizer.vocabulary_
+
+    for i, example in enumerate(context_windows):
         clean_words = [w for w in example["words"] if w != "<PAD>"]
         target_word = example["target"]
         label = example["target_label"]
@@ -105,7 +110,11 @@ def build_statistical_feature_matrix(context_windows, vectorizer=None):
         )
         
         if vectorizer is not None:
-            tfidf_score = extract_tfidf_score(vectorizer, example["words"], target_word)
+            target_lower = target_word.lower()
+            tfidf_score = 0.0
+            if target_lower in vocab:
+                col = vocab[target_lower]
+                tfidf_score = float(tfidf_matrix[i, col])
             features.append(tfidf_score)
 
         X.append(features)
@@ -135,7 +144,12 @@ def build_combined_feature_matrix(
 
     EPSILON = 1e-15
 
-    for example in context_windows:
+    if vectorizer is not None:
+        corpus = [" ".join(w for w in example["words"] if w != "<PAD>").lower() for example in context_windows]
+        tfidf_matrix = vectorizer.transform(corpus)
+        vocab = vectorizer.vocabulary_
+
+    for i, example in enumerate(context_windows):
         clean_words = [w for w in example['words'] if w != '<PAD>']
         target_word = example["target"]
         label = example["target_label"]
@@ -146,7 +160,11 @@ def build_combined_feature_matrix(
         )
         
         if vectorizer is not None:
-            tfidf_score = extract_tfidf_score(vectorizer, example["words"], target_word)
+            target_lower = target_word.lower()
+            tfidf_score = 0.0
+            if target_lower in vocab:
+                col = vocab[target_lower]
+                tfidf_score = float(tfidf_matrix[i, col])
             stat_features.append(tfidf_score)
 
         window_key = f"{example['id']}_[{example['target']}]_{'_'.join(example['words'])}"

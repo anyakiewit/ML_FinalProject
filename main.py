@@ -19,7 +19,7 @@ from sklearn.metrics import accuracy_score, f1_score
 
 # PARAMETERS
 N_CONTEXT_SIZE = 10
-BATCH_SIZE = 64
+BATCH_SIZE = 512
 TEST_LIMIT = 50000
 
 # ENV VARIABLES
@@ -99,6 +99,7 @@ def main():
     print("\n[magenta]________________ Building Feature Matrices ________________[/magenta]")
 
     # Build feature matrices
+    # TODO speed this up maybe?
     X_train, y_train = build_statistical_feature_matrix(train_context_windows, vectorizer=tfidf_vectorizer)
     X_val, y_val = build_statistical_feature_matrix(val_context_windows, vectorizer=tfidf_vectorizer)
 
@@ -177,7 +178,7 @@ def main():
     svm_sgd_model = train_sdg_svm(X_train, y_train)
 
     # Train SVM on Combined Features
-    # svm_linear_model_comb = train_linear_svm(X_train_comb, y_train_comb, model_path="output/svm_linear_model_comb.joblib", tune=True)
+    svm_linear_model_comb = train_linear_svm(X_train_comb, y_train_comb, model_path="output/svm_linear_model_comb.joblib", tune=True)
     svm_sgd_model_comb = train_sdg_svm(X_train_comb, y_train_comb, model_path="output/svm_sgd_model_comb.joblib")
 
     # Evaluate
@@ -301,13 +302,30 @@ def main():
     test_mlm_cache = get_or_create_mlm_features(test_windows, TEST_MLM_CACHE_PATH, batch_size=BATCH_SIZE)
 
     # 3. Build test feature matrix (Combined)
-    X_test_comb, y_test_comb = build_combined_feature_matrix(test_windows, cache_path=TEST_MLM_CACHE_PATH)
+    X_test_comb, y_test_comb = build_combined_feature_matrix(
+        test_windows, 
+        cache_path=TEST_MLM_CACHE_PATH, 
+        vectorizer=tfidf_vectorizer
+    )
 
-    # 4. Train and Evaluate Random Forest
-    rf_model_comb = train_random_forest(X_train_comb, y_train_comb, model_path="output/rf_model_comb.joblib")
-
+    # 4. Test evaluate already trained Random Forest
     print("\n[magenta]________________ Random Forest Results on Test Data ________________[/magenta]")
-    evaluate_model(rf_model_comb, X_test_comb, y_test_comb, split_name="FINAL TEST SET")
+    evaluate_model(
+        rf_model_comb, 
+        X_test_comb, 
+        y_test_comb, 
+        context_windows=test_windows,
+        split_name="FINAL TEST SET"
+    )
+
+    preds_test = rf_model_comb.predict(X_test_comb)
+
+    results_list.append({
+        'name': "Random Forest Combined - Test",
+        'accuracy': accuracy_score(y_test_comb, preds_test),
+        'f1': f1_score(y_test_comb, preds_test, average='macro'),
+        'mae': calculate_boundary_mae(preds_test, test_windows)
+    })
 
     return 0
 

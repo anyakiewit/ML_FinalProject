@@ -74,6 +74,11 @@ The label represents whether the token at the 0-based index is human-written (0)
 For each instance, a context window is constructed around a target word.
 Based on this context, a set of statistical features was extracted to capture surface-level charactetristics of the text.
 These were then appended to the MLM features to create a comprehensive feature vector for each instance.
+This feature vector is then used to train a classifier to predict whether the target word is human-written or machine-written.
+
+For each instance, a context window is constructed around a target word.
+Based on this context, a set of statistical features was extracted to capture surface-level charactetristics of the text.
+These were then appended to the MLM features to create a comprehensive feature vector for each instance.
 This feature vector is then used to train a classifier to predict whether the target word is human-written or machine-generated.
 
 \subsection{Preprocessing}
@@ -86,8 +91,6 @@ The data was tokenized by splitting on spaces, to ensure the labeling remained a
 \subsection{Feature Engineering}
 
 \textcolor{red}{Summary of the kinds of features where trying to get and what will eventually go into the models}
-
-
 
 \subsubsection{Positional Features}
 
