@@ -74,11 +74,6 @@ The label represents whether the token at the 0-based index is human-written (0)
 For each instance, a context window is constructed around a target word.
 Based on this context, a set of statistical features was extracted to capture surface-level charactetristics of the text.
 These were then appended to the MLM features to create a comprehensive feature vector for each instance.
-This feature vector is then used to train a classifier to predict whether the target word is human-written or machine-written.
-
-For each instance, a context window is constructed around a target word.
-Based on this context, a set of statistical features was extracted to capture surface-level charactetristics of the text.
-These were then appended to the MLM features to create a comprehensive feature vector for each instance.
 This feature vector is then used to train a classifier to predict whether the target word is human-written or machine-generated.
 
 \subsection{Preprocessing}
@@ -187,13 +182,13 @@ models rarely predict.
 
 \subsubsection{Logistic Regression}
 
-In this project, we implemented a baseline classification model for the word-in-context task using Logistic Regression combined with manually engineered statistical features.
+% In this project, we implemented a baseline classification model for the word-in-context task using Logistic Regression combined with manually engineered statistical features.
 
 Given that the extracted features operate on different numerical scales, feature standardization was applied using a \texttt{StandardScaler}.
 This preprocessing step was integrated into a pipeline together with the classifier.
 The model was trained using a maximum of 1000 iterations to ensure convergence.
 
-The overall pipeline was designed to be modular and extensible, allowing additional features to be incorporated without modifying the model architecture.
+% The overall pipeline was designed to be modular and extensible, allowing additional features to be incorporated without modifying the model architecture.
 
 \subsubsection{SVM}
 
