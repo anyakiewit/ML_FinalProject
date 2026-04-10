@@ -1,13 +1,8 @@
 import json
 import os
 
-from nltk import SnowballStemmer, WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 
-from helper_functions import setup_nltk_data
-
-
-# Marten
 def load_data(input_path):
     """Load data from a JSONL file."""
 
@@ -40,7 +35,6 @@ def load_data(input_path):
     return output_records
 
 
-# Marten
 def create_validation_split_path(train_data_path, test_size=0.2, random_state=42):
     """Create a validation split from the training data."""
 
@@ -66,17 +60,3 @@ def create_validation_split_path(train_data_path, test_size=0.2, random_state=42
             outfile.write(record)
 
     return train_data, val_data
-
-
-# Outputting stems not yet done
-def stem_tokens(words):
-    """Stem tokens"""
-    stemmer = SnowballStemmer("english")
-    return [stemmer.stem(word) for word in words]
-
-
-# Outputting lemmas not yet done
-def lemmatize_tokens(words):
-    """Lemmatize tokens"""
-    lemmatizer = WordNetLemmatizer()
-    return [lemmatizer.lemmatize(word) for word in words]

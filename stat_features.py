@@ -12,10 +12,6 @@ def average_word_length(words):
         return 0.0
     return sum(len(word) for word in words) / len(words)
 
-# TODO: do not use this function as it very hard to implement correctly.
-def sentence_length(context):
-    return len(context)
-
 def punctuation_count(words):
     clean_context = " ".join(words)
     return sum(1 for char in clean_context if char in string.punctuation)
@@ -56,7 +52,6 @@ def extract_statistical_features(context, target_word):
 def build_tfidf_vectorizer(context_windows, cache_path="output/tfidf_vectorizer.joblib"):
     """Fit a TF-IDF vectorizer on training context window texts (lowercased) or load cached one."""
     if os.path.exists(cache_path):
-        from rich import print
         print(f"[dim]Loading cached TF-IDF vectorizer from {cache_path}[/dim]")
         return joblib.load(cache_path)
 
@@ -70,7 +65,6 @@ def build_tfidf_vectorizer(context_windows, cache_path="output/tfidf_vectorizer.
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     joblib.dump(vectorizer, cache_path)
     
-    from rich import print
     print(f"[dim]Saved TF-IDF vectorizer to {cache_path}[/dim]")
     return vectorizer
 
@@ -154,11 +148,13 @@ def build_combined_feature_matrix(
         target_word = example["target"]
         label = example["target_label"]
 
+        # 1. Extract statistical features.
         stat_features = extract_statistical_features(
             clean_words,
             target_word
         )
         
+        # 2. Extract TF-IDF features.
         if vectorizer is not None:
             target_lower = target_word.lower()
             tfidf_score = 0.0
@@ -167,12 +163,13 @@ def build_combined_feature_matrix(
                 tfidf_score = float(tfidf_matrix[i, col])
             stat_features.append(tfidf_score)
 
+        # 3. Extract MLM features.
         window_key = f"{example['id']}_[{example['target']}]_{'_'.join(example['words'])}"
 
+        # Get MLM features from cache.
         raw_prob, raw_rank = mlm_cache.get(window_key, [EPSILON, 50000.0])
-
-        safe_prob = max(raw_prob, EPSILON)
         
+        safe_prob = max(raw_prob, EPSILON)
         log_prob = math.log(safe_prob)
 
         log_rank = math.log(max(raw_rank, 1.0))
@@ -181,6 +178,7 @@ def build_combined_feature_matrix(
 
         engineered_mlm_features = [log_prob, log_rank, perplexity]
 
+        # 4. Combine all features.
         combined = engineered_mlm_features + stat_features
         
         X.append(combined)

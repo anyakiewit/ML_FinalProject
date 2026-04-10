@@ -1,9 +1,6 @@
 from sklearn.model_selection import RandomizedSearchCV
 from scipy.stats import loguniform
-import gzip
-import json
 import os
-import math
 import numpy as np
 
 import joblib
@@ -34,8 +31,11 @@ def train_logistic_regression(X_train, y_train):
     model.fit(X_train, y_train)
     return model
 
+# ---------------------- MAE Calculation ----------------------
 
 def calculate_boundary_mae(predictions, context_windows):
+    ''' MAE calculation without smoothing applied. Room for improvement '''
+    # Store first transition point for each document.
     doc_boundaries = {}
     
     for idx, window in enumerate(context_windows):
@@ -43,17 +43,22 @@ def calculate_boundary_mae(predictions, context_windows):
         if doc_id not in doc_boundaries:
             doc_boundaries[doc_id] = {'actual': -1, 'predicted': -1, 'length': window['doc_length']}
         
+        # If target is 1 and haven't found it yet.
         if window['target_label'] == 1 and doc_boundaries[doc_id]['actual'] == -1:
             doc_boundaries[doc_id]['actual'] = window['word_index']
-            
+        
+        # If prediction is 1 and haven't found it yet.
         if predictions[idx] == 1 and doc_boundaries[doc_id]['predicted'] == -1:
             doc_boundaries[doc_id]['predicted'] = window['word_index']
 
     mae_errors = []
+
+    # Calculate MAE for each document.
     for doc_id, bounds in doc_boundaries.items():
         actual = bounds['actual'] if bounds['actual'] != -1 else bounds['length']
         predicted = bounds['predicted'] if bounds['predicted'] != -1 else bounds['length']
         
+        # Absolute difference between actual and predicted boundary.
         mae_errors.append(abs(actual - predicted))
     
     if mae_errors:
@@ -61,23 +66,6 @@ def calculate_boundary_mae(predictions, context_windows):
         print(f"[bold yellow]Boundary MAE (in word index offset):[/bold yellow] {mae:.2f}")
         return mae
     return None
-
-
-def evaluate_model(model, X, y, context_windows=None, split_name="Validation"):
-    predictions = model.predict(X)
-
-    macro_f1 = f1_score(y, predictions, average='macro')
-
-    print(f"\n[bold cyan]### {split_name} results ###[/bold cyan]")
-    print(f"[bold green]Accuracy:[/bold green] {accuracy_score(y, predictions):.4f}")
-    print(f"[bold green]Macro F1:[/bold green] {macro_f1:.4f}")
-    print(f"[dim]{classification_report(y, predictions, target_names=['Human', 'Machine'])}[/dim]")
-
-    # Visualize and save the Confusion Matrix
-    plot_and_save_confusion_matrix(y, predictions, title=split_name)
-
-    if context_windows is not None:
-        calculate_boundary_mae(predictions, context_windows)
 
 # ---------------------- SVM ----------------------
 
@@ -250,6 +238,22 @@ def train_random_forest(
 
 
 # ---------------------- Evaluate Results----------------------
+
+def evaluate_model(model, X, y, context_windows=None, split_name="Validation"):
+    predictions = model.predict(X)
+
+    macro_f1 = f1_score(y, predictions, average='macro')
+
+    print(f"\n[bold cyan]### {split_name} results ###[/bold cyan]")
+    print(f"[bold green]Accuracy:[/bold green] {accuracy_score(y, predictions):.4f}")
+    print(f"[bold green]Macro F1:[/bold green] {macro_f1:.4f}")
+    print(f"[dim]{classification_report(y, predictions, target_names=['Human', 'Machine'])}[/dim]")
+
+    # Visualize and save the Confusion Matrix
+    plot_and_save_confusion_matrix(y, predictions, title=split_name)
+
+    if context_windows is not None:
+        calculate_boundary_mae(predictions, context_windows)
 
 
 def evaluate_results(all_results):

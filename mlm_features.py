@@ -60,14 +60,18 @@ class MLMFeatureExtractor:
 
         batch_masked_texts = []
 
+        # 1. Masking the target word in each context window.
         for context_words in batch_context_words:
             middle_idx = len(context_words) // 2
             masked_words = context_words.copy()
+
+            # Replace the target word with RoBERTa's <mask> token.
             masked_words[middle_idx] = self.tokenizer.mask_token
 
             clean_words = [w for w in masked_words if w != "<PAD>"]
             batch_masked_texts.append(" ".join(clean_words))
 
+        # 2. Tokenizing the masked texts.
         inputs = self.tokenizer(
             batch_masked_texts,
             return_tensors="pt",
@@ -76,20 +80,25 @@ class MLMFeatureExtractor:
             max_length=128
         ).to(self.device)
 
+        # 3. Running the model.
         with torch.no_grad():
             outputs = self.model(**inputs)
 
         results = []
 
-        # Iterates through each example in the batch to extract the target word probability and rank.
+        # 4. Iterates through each example in the batch to extract the target word probability and rank.
         for i in range(len(batch_masked_texts)):
+            # Finds the index of the mask token
             mask_token_index = torch.where(inputs["input_ids"][i] == self.tokenizer.mask_token_id)[0]
 
+            # If no mask token is found, skip.
             if len(mask_token_index) == 0:
                 results.append([0.0, 50000.0, ""])
                 continue
 
             mask_token_index = mask_token_index[0].item()
+
+            # Raw scores for each token in the vocabulary.
             mask_token_logits = outputs.logits[i, mask_token_index, :].clone()
 
             # Mask out special tokens so they aren't predicted.
@@ -124,6 +133,7 @@ class MLMFeatureExtractor:
             avg_log_prob = total_log_prob / len(target_token_ids)
             target_prob = math.exp(avg_log_prob)
 
+            # Gets the top predicted token.
             top_token_id = torch.argmax(mask_token_probs).item()
             top_guess = self.tokenizer.decode([top_token_id]).strip()
 

@@ -53,7 +53,6 @@ def plot_and_save_confusion_matrix(y_true, y_pred, title, output_dir="graphs"):
     filename = f"{output_dir}/{clean_title}_confusion.png"
     plt.savefig(filename)
     
-    from rich import print
     print(f"[dim]Saved Confusion Matrix to {filename}[/dim]")
     plt.close()
 
