@@ -274,11 +274,12 @@ Table \ref{tab:full_results} presents the comprehensive validation metrics acros
         Linear SVM          & Statistical           & 0.6887                       & 0.6608                       & 66.39                 \\
         Linear SVM          & Combined              & 0.7006                       & 0.6721                       & 66.59                 \\
         \hline
-        SGD SVM             & Statistical           & 0.6947                       & 0.6646                       & 66.71                 \\
-        SGD SVM             & Combined              & 0.7110                       & 0.6786                       & 67.42                 \\
+        SGD SVM             & Statistical           & 0.6990                       & 0.6667                       & 66.71                 \\
+        SGD SVM             & Combined              & 0.7076                       & 0.6759                       & 67.24                 \\
         \hline
         Random Forest       & Statistical           & 0.7689                       & 0.7309                       & 62.67                 \\
-        Random Forest       & Combined              & \textbf{0.8180}              & \textbf{0.7797}              & \textbf{60.83}        \\
+        Random Forest       & Combined (Val)        & \textbf{0.8180}              & \textbf{0.7797}              & \textbf{60.83}        \\
+        Random Forest       & Combined (Test)       & 0.7547                       & 0.6775                       & 65.64                 \\
         \hline
     \end{tabular}
     \caption{Comprehensive validation results for all trained models. "Combined" refers to the integration of \texttt{roberta-large} MLM features (Probability, Rank, Perplexity) with standard stylometric statistics.}
