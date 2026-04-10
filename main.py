@@ -108,7 +108,7 @@ def main():
     # list for all the results
     results_list = []
 
-    print("\n[magenta]________________ NB Baseline (Position Only) ________________[/magenta]")
+    print("\n[magenta]________________ NB Baseline ________________[/magenta]")
     X_train_pos, y_train_pos = build_positional_feature_matrix(train_context_windows)
     X_val_pos, y_val_pos = build_positional_feature_matrix(val_context_windows)
 
@@ -287,8 +287,29 @@ def main():
 
     evaluate_results(results_list)
 
-    return 0
 
+    print("\n[bold green]________________ FINAL TEST PHASE ________________[/bold green]")
+
+    # 1. Load test data
+    test_data = load_data("raw_data/subtaskC_dev.jsonl")
+
+    # 2. Extract test context windows and MLM features
+    TEST_CONTEXT_PATH = "output/test_context_windows.jsonl.gz"
+    TEST_MLM_CACHE_PATH = "output/test_mlm_features_cache.jsonl.gz"
+
+    test_windows = get_or_create_context_windows(test_data, TEST_CONTEXT_PATH)
+    test_mlm_cache = get_or_create_mlm_features(test_windows, TEST_MLM_CACHE_PATH, batch_size=BATCH_SIZE)
+
+    # 3. Build test feature matrix (Combined)
+    X_test_comb, y_test_comb = build_combined_feature_matrix(test_windows, cache_path=TEST_MLM_CACHE_PATH)
+
+    # 4. Train and Evaluate Random Forest
+    rf_model_comb = train_random_forest(X_train_comb, y_train_comb, model_path="output/rf_model_comb.joblib")
+
+    print("\n[magenta]________________ Random Forest Results on Test Data ________________[/magenta]")
+    evaluate_model(rf_model_comb, X_test_comb, y_test_comb, split_name="FINAL TEST SET")
+
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
