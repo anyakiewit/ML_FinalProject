@@ -12,12 +12,12 @@ def plot_feature_importances(model, feature_names, title="SVM_Feature_Importance
     
     if hasattr(clf, 'coef_'):
         importances = clf.coef_[0]
-    elif hasattr(clf, 'feature_importances_'):   # add this branch
+    elif hasattr(clf, 'feature_importances_'):
         importances = clf.feature_importances_
     elif hasattr(clf, 'theta_') and hasattr(clf, 'var_'):
         importances = (clf.theta_[1] - clf.theta_[0]) / np.sqrt(clf.var_[1] + clf.var_[0])
     else:
-        print(f"[yellow]Model {title} does not have coefficients or means (not a supported model).[/yellow]")
+        print(f"[yellow]Model {title} does not have coefficients or means.[/yellow]")
         return
         
     indices = np.argsort(importances)

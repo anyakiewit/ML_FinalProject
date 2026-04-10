@@ -99,7 +99,6 @@ def main():
     print("\n[magenta]________________ Building Feature Matrices ________________[/magenta]")
 
     # Build feature matrices
-    # TODO speed this up maybe?
     X_train, y_train = build_statistical_feature_matrix(train_context_windows, vectorizer=tfidf_vectorizer)
     X_val, y_val = build_statistical_feature_matrix(val_context_windows, vectorizer=tfidf_vectorizer)
 
@@ -171,7 +170,6 @@ def main():
     print("\n[bold magenta]________________ SVM ________________[/bold magenta]")
 
     ### Trial of SVM variants ###
-
 
     # Train SVM on Statistical Features; Linear has hyperparameter tuning
     svm_linear_model = train_linear_svm(X_train, y_train, tune=True)
@@ -287,7 +285,6 @@ def main():
     print("\n[bold magenta]________________ Final Evaluation ________________[/bold magenta]")
 
     evaluate_results(results_list)
-
 
     print("\n[bold green]________________ FINAL TEST PHASE ________________[/bold green]")
 
