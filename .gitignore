@@ -555,3 +555,4 @@ output/context_windows.jsonl
 graphs/
 
 .vscode/settings.json
+report/report.pdf

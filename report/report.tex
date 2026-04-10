@@ -48,7 +48,7 @@ Surface-level markers such as average word length, punctuation frequency and cap
 
 However with the rise of Large Language Models (LLMs), detection mechanisms have increasingly adopted probabilistic approaches.
 Masked Language Models (MLMs) are now frequently used to extract predictive features such as token log-probability, rank and perplexity.
-Recently, Xu and Sheng (2024) demonstrated the robustness of this approach by utilizing MLM-based perplexity to successfully detect AI-generated sequences \cite{xu2024detecting}.
+Recently, Xu and Sheng (2024) demonstrated this approach by utilizing MLM-based perplexity to detect AI-generated sequences \cite{xu2024detecting}.
 Their findings emphasize that AI-generated text, in their case code, consistently exhibits lower and more uniform perplexity compared to the natural variance of human authorship \cite{xu2024detecting}.
 % This validates our use of both stylometric baseline features and MLM-derived metrics to identify the exact boundary where text shifts from human variance to machine predictability.
 
@@ -67,17 +67,27 @@ The label represents whether the token at the 0-based index is human-written (0)
 
 \section{Method}
 
-\subsection{Task Formulation}
+\subsection{Pipeline}
 
 \textcolor{red}{small summary of the task, what we are trying to predict}
+
+For each instance, a context window is constructed around a target word.
+Based on this context, a set of statistical features was extracted to capture surface-level charactetristics of the text.
+These were then appended to the MLM features to create a comprehensive feature vector for each instance.
+This feature vector is then used to train a classifier to predict whether the target word is human-written or machine-generated.
 
 \subsection{Preprocessing}
 
 \textcolor{red}{Split only on (" "), lemmatization/stemming and punctuation handling kept to a minimum}
 
+The dataset was split into a training set and a test set, with an 80/20 split.
+The data was tokenized by splitting on spaces, to ensure the labeling remained accurate.
+
 \subsection{Feature Engineering}
 
 \textcolor{red}{Summary of the kinds of features where trying to get and what will eventually go into the models}
+
+
 
 \subsubsection{Positional Features}
 
@@ -85,7 +95,10 @@ The label represents whether the token at the 0-based index is human-written (0)
 
 \subsubsection{Statistical Features}
 
-\textcolor{red}{Describe the retrieved features}
+Based on a context window, a set of statistical features was extracted to capture surface-level characteristics of the text.
+
+These features include: (1) the average word length within the context window, (2) the number of punctuation marks, (3) a binary indicator capturing whether the target word is written in all capital letters, (4) a binary indicator whether the target word has a capital letter as its first letter, and (5) the tf-idf score of the target word.
+To ensure that these features reflect only meaningful textual information, padding tokens (\texttt{<PAD>}) were excluded from all computations.
 
 \subsubsection{MLM Features}
 
@@ -171,7 +184,13 @@ models rarely predict.
 
 \subsubsection{Logistic Regression}
 
-\textcolor{red}{Describe the model and the feature retrieval}
+In this project, we implemented a baseline classification model for the word-in-context task using Logistic Regression combined with manually engineered statistical features.
+
+Given that the extracted features operate on different numerical scales, feature standardization was applied using a \texttt{StandardScaler}.
+This preprocessing step was integrated into a pipeline together with the classifier.
+The model was trained using a maximum of 1000 iterations to ensure convergence.
+
+The overall pipeline was designed to be modular and extensible, allowing additional features to be incorporated without modifying the model architecture.
 
 \subsubsection{SVM}
 
