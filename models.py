@@ -18,6 +18,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 from visualize import plot_and_save_confusion_matrix
 
+from rich.table import Table
+from rich.console import Console
+
+
 
 # ---------------------- Logistic Regression ----------------------
 
@@ -243,3 +247,38 @@ def train_random_forest(
     joblib.dump(model, model_path)
     print(f"[dim]Random Forest model saved to {model_path}[/dim]")
     return model
+
+
+# ---------------------- Evaluate Results----------------------
+
+
+def evaluate_results(all_results):
+    """
+    prints a comparison table of all tested models, expects a
+    list of doocts with keys: 'name', 'accuracy', 'f1', and 'mae'.
+    """
+    console = Console()
+
+    table = Table(
+        title="\n[bold magenta] Model Compatison Overview[/bold magenta]",
+        show_header=True,
+        header_style="bold magenta"
+    )
+
+    table.add_column("Model Name", style="cyan")
+    table.add_column("Accuarcy", justify="right")
+    table.add_column("F1", justify="right")
+    table.add_column("Boudary MAE", justify="right")
+
+    for res in all_results:
+        mae_val = res.get('mae')
+        mae_str = f"{mae_val:.2f}" if mae_val is not Nona else "N/A"
+
+        table.add_row(
+            res['name'],
+            f"{res['accuracy']:.4f}",
+            f"{res['f1']:.4f}",
+            mae_str
+        )
+
+    console.print(table)
