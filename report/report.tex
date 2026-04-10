@@ -19,10 +19,10 @@
 \title{Word-in-Context Classification for Human-Machine Mixed Text Detection}
 
 \author{
-    Anya Kiewit \\ Address line \\ Address line \\ \And
+    Anya Kiewit \\ S5168767 \\ a.y.kiewit@student.rug.nl \\ \And
     Isabelle Voskamp \\ S5319242 \\ i.s.voskamp@student.rug.nl \\ \And
     Johan Wols \\ Address line \\ Address line \\ \And
-    Marten de Jong \\ 4557182 \\  marten.de.jong.4@student.rug.nl 
+    Marten de Jong \\ S4557182 \\  marten.de.jong.4@student.rug.nl
 }
 
 \begin{document}
@@ -95,7 +95,7 @@ The data was tokenized by splitting on spaces, to ensure the labeling remained a
 
 Based on a context window, a set of statistical features was extracted to capture surface-level characteristics of the text.
 
-These features include: (1) the average word length within the context window, (2) the number of punctuation marks, (3) a binary indicator capturing whether the target word is written in all capital letters, (4) a binary indicator whether the target word has a capital letter as its first letter, and (5) the tf-idf score of the target word.
+These features include: (1) the average word length within the context window, (2) the number of punctuation marks, (3) a binary indicator capturing whether the target word is written in all capital letters, (4) a binary indicator whether the target word has a capital letter as its first letter, (5) the document position of the target word, (6) the normalised document position of the target word, and (7) the tf-idf score of the target word.
 To ensure that these features reflect only meaningful textual information, padding tokens (\texttt{<PAD>}) were excluded from all computations.
 
 \subsubsection{MLM Features}
@@ -175,10 +175,23 @@ models rarely predict.
 \subsection{Models}
 
 \textcolor{red}{Why we've chosen the models we chose}
+For classification, we will start with two common machine learning algorithms: SVM and Naive Bayes. These models are often used for classifying texts and work effectively with sparse features such as TF-IDF. We will train and compare both models to determine which one performs best on this binary classification task.
+As Naive Bayes assumes that features are independent of each other, having features that are likely correlated with each other we decided to also use logistic regression.
+
 
 \subsubsection{Naive Bayes}
 
-\textcolor{red}{Describe Naive Bayes, and describe the baseline}
+To add a probabilistic perspective to our classification, Gaussian Naive Bayes (GNB) was inplemented. GNB assumes that features follow a normal distribution and are independent of each other.
+To ensure that different scales, such as high MLM ranks, did not bias the model, \texttt{StandardScaler} was used.
+\\
+
+To establish the baseline, firstly a positional baseline was developed. This model was trained only on the normalized document position of the target words.
+The goal was to calculate a baseline, to compare the other models to.
+\\
+
+After the baseline, the full Naive Bayes model was trained, using the whole feature set.
+By comparing the full model to the baseline, the differences in performance could be measured.
+
 
 \subsubsection{Logistic Regression}
 
