@@ -35,6 +35,16 @@
 \end{abstract}
 
 \section{Introduction}
+To address the boundary detection challenge in subtask C, we adopt a word-in-context binary classification approach.
+Where each data point consists of a target word surrounded by a context window. \\
+
+For each instance, we sample a target word along with a fixed-size context window of surrounding tokens.
+Each target word is assigned a binary label, human-written or machine-generated, allowing the model to learn local stylistic and probabilistic patterns that distinguish the two classes.
+To translate these word-level predictions back into a document-level boundary, we identify the first predicted machine-generated word as the transition point.
+The performance of this approach is then evaluated using the Mean Absolute Error (MAE) relative to the ground-truth index.\\
+
+To evaluate the effectiveness of this approach, a variety of machine learning models were tested and compared.
+These include Naive Bayes (baseline and full), Logistic Regression, SVM, and Random Forest.
 
 \section{Related Work}
 
@@ -326,6 +336,7 @@ Table \ref{tab:full_results} presents the comprehensive validation metrics acros
           \end{itemize}
     \item Report
           \begin{itemize}
+              \item introduction
               \item part of the statistical feature engineering
               \item Naive Bayes (baseline and full model)
           \end{itemize}
